@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>友情致谢</title>
+    <style>
+        :root {
+            --primary: #5b67f0;
+            --primary-soft: #eef0ff;
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --line: #e5e7eb;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0;
+            background: transparent;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text-main);
+        }
+        body { padding: 16px; }
+        .dialog {
+            background: var(--bg);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+        }
+        .header {
+            padding: 20px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .close-btn {
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: #fff;
+            color: var(--text-sub);
+            font-size: 20px;
+        }
+        .content {
+            padding: 0 20px 20px;
+            max-height: 78vh;
+            overflow-y: auto;
+        }
+        .intro {
+            margin: 0 0 14px;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.75;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(229, 231, 235, 0.72);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            margin-bottom: 14px;
+        }
+        .name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .desc {
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text-main);
+        }
+        .link-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .link-btn {
+            border: 1px solid rgba(91, 103, 240, 0.16);
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .footer {
+            padding: 0 20px 20px;
+        }
+        .primary-btn {
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            padding: 15px 16px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            box-shadow: 0 14px 28px rgba(91, 103, 240, 0.25);
+        }
+    </style>
+</head>
+<body>
+<div class="dialog">
+    <div class="header">
+        <div class="title">友情致谢</div>
+        <button class="close-btn" type="button" onclick="closeDialog()">×</button>
+    </div>
+    <div class="content">
+        <p class="intro">感谢以下开发者与工具在本项目开发过程中提供的框架、模型、中转站与代码支持。</p>
+
+        <div class="card">
+            <div class="name">speed-arch</div>
+            <div class="desc">感谢底层框架支持。</div>
+            <div class="link-list">
+                <button class="link-btn" type="button" onclick="openUrl('https://github.com/speed-arch')">GitHub 主页</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="name">xiangsu1145</div>
+            <div class="desc">感谢 APK 框架及模型支持。</div>
+            <div class="link-list">
+                <button class="link-btn" type="button" onclick="openUrl('https://github.com/xiangsu1145')">GitHub 主页</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="name">Aliang1337</div>
+            <div class="desc">感谢中转站支持。</div>
+            <div class="link-list">
+                <button class="link-btn" type="button" onclick="openUrl('https://github.com/Aliang1337')">GitHub 主页</button>
+                <button class="link-btn" type="button" onclick="openUrl('https://api.alysc.top')">老站</button>
+                <button class="link-btn" type="button" onclick="openUrl('https://code.alysc.top')">新站一</button>
+                <button class="link-btn" type="button" onclick="openUrl('https://api.nullyz.cn')">新站二</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="name">GPT 与 Claude</div>
+            <div class="desc">感谢 GPT、Claude 提供代码支持。</div>
+        </div>
+    </div>
+    <div class="footer">
+        <button class="primary-btn" type="button" onclick="closeDialog()">关闭</button>
+    </div>
+</div>
+<script>
+    function closeDialog() {
+        if (window.AcknowledgementsHost && typeof window.AcknowledgementsHost.close === "function") {
+            window.AcknowledgementsHost.close();
+        }
+    }
+
+    function openUrl(url) {
+        if (window.AcknowledgementsHost && typeof window.AcknowledgementsHost.openUrl === "function") {
+            window.AcknowledgementsHost.openUrl(url);
+        }
+    }
+</script>
+</body>
+</html>

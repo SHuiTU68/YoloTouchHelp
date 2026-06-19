@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YoloTouchHelp 悬浮菜单</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-soft: rgba(99, 102, 241, 0.12);
+            --primary-strong: rgba(99, 102, 241, 0.18);
+            --bg: rgba(255, 255, 255, 0.86);
+            --panel-border: rgba(255, 255, 255, 0.68);
+            --line: rgba(226, 232, 240, 0.92);
+            --text-main: #1f2937;
+            --text-sub: #64748b;
+            --text-soft: #94a3b8;
+            --card: rgba(255, 255, 255, 0.92);
+            --danger: #ef4444;
+            --shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: var(--text-main);
+        }
+
+        body {
+            padding: 0;
+        }
+
+        .float-panel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 20px;
+            background: var(--bg);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .topbar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 10px 8px;
+            background: rgba(248, 250, 252, 0.62);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+        }
+
+        .icon-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--text-sub);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .icon-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+
+        .tabs {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .tab-btn {
+            min-width: 0;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-sub);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 7px 8px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 6px 14px rgba(99, 102, 241, 0.28);
+        }
+
+        .run-btn {
+            min-width: 56px;
+            height: 28px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.06);
+            color: var(--text-sub);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 0 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .run-btn.active {
+            background: rgba(99, 102, 241, 0.14);
+            color: var(--primary);
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .content::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+            margin-bottom: 10px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .section-note {
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-sub);
+            margin-top: 8px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 42px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .setting-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .setting-desc {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border-radius: 999px;
+            background: #e2e8f0;
+            outline: none;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .switch input::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+            transition: transform 0.2s ease;
+        }
+
+        .switch input:checked {
+            background: var(--primary);
+        }
+
+        .switch input:checked::after {
+            transform: translateX(20px);
+        }
+
+        .value {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .slider-block {
+            padding: 8px 0 2px;
+        }
+
+        .slider-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .slider-title {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .slider-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .slider-input {
+            width: 100%;
+            margin: 0;
+            accent-color: var(--primary);
+        }
+
+        .segmented {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .seg-btn {
+            flex: 1;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 8px;
+            background: rgba(241, 245, 249, 0.9);
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .seg-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.22);
+        }
+
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: rgba(241, 245, 249, 0.96);
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chip.active {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .list-button {
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            background: rgba(248, 250, 252, 0.96);
+            padding: 12px;
+            text-align: left;
+            color: var(--text-main);
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .list-button:first-child {
+            margin-top: 0;
+        }
+
+        .list-button.active {
+            background: var(--primary-soft);
+            outline: 1px solid rgba(99, 102, 241, 0.18);
+        }
+
+        .list-title {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .list-desc {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .action-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border: none;
+            border-radius: 14px;
+            background: rgba(248, 250, 252, 0.96);
+            padding: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .action-row + .action-row {
+            margin-top: 8px;
+        }
+
+        .action-arrow {
+            color: var(--text-soft);
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .empty {
+            font-size: 12px;
+            color: var(--text-sub);
+            padding: 8px 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="float-panel">
+        <div class="topbar">
+            <button class="icon-btn" type="button" onclick="closePanel()" aria-label="关闭">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="tabs" id="tabs"></div>
+            <button class="run-btn" type="button" id="runButton" onclick="toggleRunning()">已停止</button>
+        </div>
+        <div class="content" id="content"></div>
+    </div>
+
+    <script>
+        const TAB_LABELS = ["自瞄", "扳机", "模型", "系统"];
+        let state = {
+            activeTab: 0,
+            modelRunning: false,
+            classEntries: [],
+            modelNames: []
+        };
+
+        function host(method, ...args) {
+            const bridge = window.FloatMenuHost;
+            if (bridge && typeof bridge[method] === "function") {
+                bridge[method](...args);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function formatValue(type, value) {
+            const number = Number(value);
+            switch (type) {
+                case "int":
+                    return String(Math.round(number));
+                case "ms":
+                    return `${Math.round(number)}ms`;
+                case "px":
+                    return `${Math.round(number)}px`;
+                case "frame":
+                    return `${Math.round(number)}帧`;
+                case "level":
+                    return `${Math.round(number)}级`;
+                case "float1":
+                    return number.toFixed(1);
+                case "float2":
+                    return number.toFixed(2);
+                case "percent":
+                    return `${Math.round(number * 100)}%`;
+                default:
+                    return String(number);
+            }
+        }
+
+        function closePanel() {
+            host("closePanel");
+        }
+
+        function toggleRunning() {
+            state.modelRunning = !state.modelRunning;
+            renderHeader();
+            host("toggleModelRunning");
+        }
+
+        function setTab(index) {
+            state.activeTab = index;
+            renderTabs();
+            renderContent();
+            host("setTab", index);
+        }
+
+        function setBool(key, value) {
+            state[key] = value;
+            if (key === "autoTriggerAdsEnabled" || key === "kalmanPredictEnabled") {
+                renderContent();
+            }
+            host("setBoolean", key, value);
+        }
+
+        function setInt(key, value) {
+            state[key] = value;
+            if (key === "aimMode" || key === "touchOrientationMode") {
+                renderContent();
+            }
+            host("setInt", key, parseInt(value, 10));
+        }
+
+        function setFloat(key, value) {
+            state[key] = value;
+            host("setFloat", key, parseFloat(value));
+        }
+
+        function updateRangeValue(id, value, format) {
+            const target = document.getElementById(id);
+            if (target) {
+                target.textContent = formatValue(format, value);
+            }
+        }
+
+        function selectModel(index) {
+            state.modelIndex = index;
+            renderContent();
+            host("selectModel", index);
+        }
+
+        function setPriorityClass(id) {
+            if (Array.isArray(state.classEntries)) {
+                state.priorityClass = id;
+                state.classEntries = state.classEntries.map(item => ({
+                    ...item,
+                    prioritySelected: item.id === id
+                }));
+                renderContent();
+            }
+            host("setPriorityClass", id);
+        }
+
+        function setAimClass(id, enabled) {
+            host("setAimClass", id, enabled);
+        }
+
+        function setTriggerClass(id, enabled) {
+            host("setTriggerClass", id, enabled);
+        }
+
+        function setClassAimOffset(id, value) {
+            host("setClassAimOffset", id, parseFloat(value));
+        }
+
+        function setClassBoxAimRatio(id, value) {
+            host("setClassBoxAimRatio", id, parseFloat(value));
+        }
+
+        function setClassTriggerOffset(id, value) {
+            host("setClassTriggerOffset", id, parseFloat(value));
+        }
+
+        function runAction(action) {
+            host("runAction", action);
+        }
+
+        function renderHeader() {
+            const button = document.getElementById("runButton");
+            if (!button) return;
+            button.textContent = state.modelRunning ? "运行中" : "已停止";
+            button.classList.toggle("active", !!state.modelRunning);
+        }
+
+        function renderTabs() {
+            const root = document.getElementById("tabs");
+            root.innerHTML = TAB_LABELS.map((label, index) => `
+                <button class="tab-btn ${state.activeTab === index ? "active" : ""}" type="button" onclick="setTab(${index})">${label}</button>
+            `).join("");
+        }
+
+        function switchRow(label, key, checked, desc = "") {
+            return `
+                <div class="setting-row">
+                    <div class="setting-main">
+                        <div class="setting-title">${escapeHtml(label)}</div>
+                        ${desc ? `<div class="setting-desc">${escapeHtml(desc)}</div>` : ""}
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" ${checked ? "checked" : ""} onchange="setBool('${key}', this.checked)">
+                    </label>
+                </div>
+            `;
+        }
+
+        function sliderRow(options) {
+            const valueId = `value_${options.key}_${String(options.extraId ?? "main").replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+            const action = options.type === "int"
+                ? `setInt('${options.key}', this.value)`
+                : `setFloat('${options.key}', this.value)`;
+            return `
+                <div class="slider-block">
+                    <div class="slider-head">
+                        <div class="slider-title">${escapeHtml(options.label)}</div>
+                        <div class="slider-value" id="${valueId}">${formatValue(options.format, options.value)}</div>
+                    </div>
+                    <input class="slider-input" type="range"
+                        min="${options.min}" max="${options.max}" step="${options.step}" value="${options.value}"
+                        oninput="updateRangeValue('${valueId}', this.value, '${options.format}')"
+                        onchange="${action}">
+                    ${options.note ? `<div class="section-note">${escapeHtml(options.note)}</div>` : ""}
+                </div>
+            `;
+        }
+
+        function customSliderRow(options) {
+            const valueId = `value_${options.key}_${String(options.extraId ?? "main").replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+            return `
+                <div class="slider-block">
+                    <div class="slider-head">
+                        <div class="slider-title">${escapeHtml(options.label)}</div>
+                        <div class="slider-value" id="${valueId}">${formatValue(options.format, options.value)}</div>
+                    </div>
+                    <input class="slider-input" type="range"
+                        min="${options.min}" max="${options.max}" step="${options.step}" value="${options.value}"
+                        oninput="updateRangeValue('${valueId}', this.value, '${options.format}')"
+                        onchange="${options.onchange}">
+                </div>
+            `;
+        }
+
+        function segmentedRow(title, key, value, items) {
+            return `
+                <div class="section">
+                    <div class="section-title">${escapeHtml(title)}</div>
+                    <div class="segmented">
+                        ${items.map(item => `
+                            <button class="seg-btn ${item.value === value ? "active" : ""}" type="button" onclick="setInt('${key}', ${item.value})">
+                                ${escapeHtml(item.label)}
+                            </button>
+                        `).join("")}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAimClasses() {
+            if (!Array.isArray(state.classEntries) || state.classEntries.length === 0) {
+                return "";
+            }
+            return `
+                <div class="section">
+                    <div class="section-title">目标类别</div>
+                    ${state.classEntries.map(item => `
+                        <div class="setting-row">
+                            <div class="setting-main">
+                                <div class="setting-title">${escapeHtml(item.name)}</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" ${item.aimSelected ? "checked" : ""} onchange="setAimClass(${item.id}, this.checked)">
+                            </label>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function renderPriorityClasses() {
+            if (!Array.isArray(state.classEntries) || state.classEntries.length === 0) {
+                return "";
+            }
+            const items = [{
+                id: -1,
+                name: "无",
+                prioritySelected: state.priorityClass === -1
+            }].concat(state.classEntries.map(item => ({
+                id: item.id,
+                name: item.name,
+                prioritySelected: item.prioritySelected
+            })));
+            return `
+                <div class="section">
+                    <div class="section-title">优先瞄准</div>
+                    <div class="chip-list">
+                        ${items.map(item => `
+                            <button class="chip ${item.prioritySelected ? "active" : ""}" type="button" onclick="setPriorityClass(${item.id})">
+                                ${escapeHtml(item.name)}
+                            </button>
+                        `).join("")}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTriggerClasses() {
+            if (!Array.isArray(state.classEntries) || state.classEntries.length === 0) {
+                return "";
+            }
+            return `
+                <div class="section">
+                    <div class="section-title">触发类别</div>
+                    ${state.classEntries.map(item => `
+                        <div class="setting-row">
+                            <div class="setting-main">
+                                <div class="setting-title">${escapeHtml(item.name)}</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" ${item.triggerSelected ? "checked" : ""} onchange="setTriggerClass(${item.id}, this.checked)">
+                            </label>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function renderAimTab() {
+            const parts = [];
+
+            parts.push(`
+                <div class="section">
+                    ${switchRow("自瞄", "aimbotEnabled", state.aimbotEnabled)}
+                    ${switchRow("按住激发", "aimHoldEnabled", state.aimHoldEnabled)}
+                    ${switchRow("压枪", "recoilEnabled", state.recoilEnabled, "仅在按住触发区时持续下压")}
+                    ${sliderRow({ label: "压枪强度", key: "recoilStrength", value: state.recoilStrength, min: 0, max: 80, step: 0.1, type: "float", format: "float1" })}
+                    ${sliderRow({ label: "收敛阈值", key: "convergeThresh", value: state.convergeThresh, min: 0, max: 100, step: 1, type: "int", format: "px", note: "误差小于此值时抬手" })}
+                </div>
+            `);
+
+            parts.push(segmentedRow("算法模式", "aimMode", state.aimMode, [
+                { label: "PID", value: 0 },
+                { label: "贝塞尔", value: 1 }
+            ]));
+
+            if (state.aimMode === 0) {
+                parts.push(`
+                    <div class="section">
+                        <div class="section-title">PID 参数</div>
+                        ${sliderRow({ label: "Kp", key: "speed", value: state.speed, min: 0.01, max: 1.0, step: 0.01, type: "float", format: "float2" })}
+                        ${sliderRow({ label: "Ki", key: "ki", value: state.ki, min: 0.0, max: 0.5, step: 0.01, type: "float", format: "float2" })}
+                        ${sliderRow({ label: "Kd", key: "kd", value: state.kd, min: 0.0, max: 1.0, step: 0.01, type: "float", format: "float2" })}
+                    </div>
+                `);
+            } else {
+                parts.push(`
+                    <div class="section">
+                        <div class="section-title">贝塞尔参数</div>
+                        ${sliderRow({ label: "持续时间", key: "bezierDuration", value: state.bezierDuration, min: 5, max: 100, step: 1, type: "int", format: "ms" })}
+                        ${sliderRow({ label: "曲线弯曲", key: "bezierControlOffset", value: state.bezierControlOffset, min: 0.05, max: 0.5, step: 0.01, type: "float", format: "float2" })}
+                        ${sliderRow({ label: "随机幅度", key: "bezierRandomSpread", value: state.bezierRandomSpread, min: 0, max: 0.5, step: 0.01, type: "float", format: "float2" })}
+                    </div>
+                `);
+            }
+
+            if (state.hasMultipleClasses) {
+                parts.push(`
+                    <div class="section">
+                        <div class="section-title">Y 偏移（各类别）</div>
+                        ${state.classEntries.map(item => customSliderRow({
+                            label: item.name,
+                            key: "aimOffset",
+                            extraId: `aim_${item.id}`,
+                            value: item.aimOffset,
+                            min: -1.5,
+                            max: 1.5,
+                            step: 0.01,
+                            format: "percent",
+                            onchange: `setClassAimOffset(${item.id}, this.value)`
+                        })).join("")}
+                    </div>
+                `);
+                parts.push(`
+                    <div class="section">
+                        <div class="section-title">框内偏移（各类别）</div>
+                        ${state.classEntries.map(item => customSliderRow({
+                            label: item.name,
+                            key: "boxAimRatio",
+                            extraId: `box_${item.id}`,
+                            value: item.boxAimRatio,
+                            min: 0,
+                            max: 1,
+                            step: 0.01,
+                            format: "percent",
+                            onchange: `setClassBoxAimRatio(${item.id}, this.value)`
+                        })).join("")}
+                    </div>
+                `);
+            } else {
+                parts.push(`
+                    <div class="section">
+                        ${sliderRow({ label: "Y 偏移", key: "aimOffsetYRatio", value: state.aimOffsetYRatio, min: -1.5, max: 1.5, step: 0.01, type: "float", format: "percent" })}
+                        ${sliderRow({ label: "框内偏移", key: "boxAimRatio", value: state.boxAimRatio, min: 0, max: 1, step: 0.01, type: "float", format: "percent" })}
+                    </div>
+                `);
+            }
+
+            parts.push(`
+                <div class="section">
+                    ${sliderRow({ label: "摆动幅度", key: "aimSwayAmplitude", value: state.aimSwayAmplitude, min: 0, max: 2, step: 1, type: "int", format: "px" })}
+                    ${sliderRow({ label: "自瞄预判", key: "aimPrediction", value: state.aimPrediction, min: 0, max: 10, step: 1, type: "int", format: "level", note: "按目标移动趋势提前瞄点，数值越大提前越多" })}
+                    ${sliderRow({ label: "丢帧容忍", key: "targetLostTolerance", value: state.targetLostTolerance, min: 0, max: 10, step: 1, type: "int", format: "frame" })}
+                    ${switchRow("锁定射线", "showLockRay", state.showLockRay)}
+                    ${sliderRow({ label: "锁框阈值", key: "lockBoxThreshold", value: state.lockBoxThreshold, min: 0, max: 1, step: 0.01, type: "float", format: "float2" })}
+                    ${sliderRow({ label: "中心距离权重", key: "lockCenterWeight", value: state.lockCenterWeight, min: 0, max: 1, step: 0.01, type: "float", format: "float2" })}
+                    ${sliderRow({ label: "移动平滑", key: "moveSmooth", value: state.moveSmooth, min: 0, max: 0.95, step: 0.01, type: "float", format: "float2" })}
+                    ${sliderRow({ label: "死区保持帧", key: "deadzoneHoldFrames", value: state.deadzoneHoldFrames, min: 0, max: 30, step: 1, type: "int", format: "frame" })}
+                    ${sliderRow({ label: "边界回中", key: "edgeReturnStrength", value: state.edgeReturnStrength, min: 0, max: 1, step: 0.01, type: "float", format: "float2" })}
+                </div>
+            `);
+
+            parts.push(renderAimClasses());
+            parts.push(renderPriorityClasses());
+            return parts.join("");
+        }
+
+        function renderTriggerTab() {
+            const parts = [];
+            parts.push(`
+                <div class="section">
+                    ${switchRow("自动扳机", "triggerEnabled", state.triggerEnabled)}
+                    ${sliderRow({ label: "反应速度", key: "triggerReactionSpeed", value: state.triggerReactionSpeed, min: 10, max: 500, step: 1, type: "int", format: "ms" })}
+                    ${sliderRow({ label: "冷却时间", key: "triggerCooldown", value: state.triggerCooldown, min: 10, max: 1000, step: 1, type: "int", format: "ms" })}
+                    ${sliderRow({ label: "向上波动", key: "triggerUpFluctuation", value: state.triggerUpFluctuation, min: 0, max: 15, step: 1, type: "int", format: "ms" })}
+                    ${sliderRow({ label: "向下波动", key: "triggerDownFluctuation", value: state.triggerDownFluctuation, min: 0, max: 15, step: 1, type: "int", format: "ms" })}
+                    ${sliderRow({ label: "触摸时间", key: "triggerTouchDuration", value: state.triggerTouchDuration, min: 1, max: 50, step: 1, type: "int", format: "ms" })}
+                    ${switchRow("自动急停", "autoStopEnabled", state.autoStopEnabled)}
+                    ${switchRow("吸附式扳机", "autoTriggerAdsEnabled", state.autoTriggerAdsEnabled)}
+                    ${state.autoTriggerAdsEnabled ? sliderRow({ label: "吸附检测框距离", key: "autoTriggerAdsRange", value: state.autoTriggerAdsRange, min: 20, max: 500, step: 1, type: "float", format: "int" }) : ""}
+                    ${sliderRow({ label: "Y 偏移", key: "triggerOffsetYRatio", value: state.triggerOffsetYRatio, min: -2, max: 0, step: 0.01, type: "float", format: "percent" })}
+                </div>
+            `);
+
+            if (state.hasMultipleClasses) {
+                parts.push(`
+                    <div class="section">
+                        <div class="section-title">Y 偏移（各类别）</div>
+                        ${state.classEntries.map(item => customSliderRow({
+                            label: item.name,
+                            key: "triggerOffset",
+                            extraId: `trigger_${item.id}`,
+                            value: item.triggerOffset,
+                            min: -2,
+                            max: 0,
+                            step: 0.01,
+                            format: "percent",
+                            onchange: `setClassTriggerOffset(${item.id}, this.value)`
+                        })).join("")}
+                    </div>
+                `);
+            }
+
+            parts.push(renderTriggerClasses());
+            return parts.join("");
+        }
+
+        function renderModelTab() {
+            const modelList = Array.isArray(state.modelNames) && state.modelNames.length > 0
+                ? state.modelNames.map((name, index) => `
+                    <button class="list-button ${state.modelIndex === index ? "active" : ""}" type="button" onclick="selectModel(${index})">
+                        <div class="list-title">${escapeHtml(name)}</div>
+                        <div class="list-desc">${state.modelIndex === index ? "当前已选择此模型" : "点击切换到该模型"}</div>
+                    </button>
+                `).join("")
+                : `<div class="empty">无可用模型</div>`;
+
+            return `
+                <div class="section">
+                    <div class="section-title">模型选择</div>
+                    ${modelList}
+                </div>
+                <div class="section">
+                    ${sliderRow({ label: "检测置信度", key: "confidence", value: state.confidence, min: 0.1, max: 0.9, step: 0.01, type: "float", format: "float2", note: "低于此值的检测结果将被过滤" })}
+                    ${switchRow("卡尔曼预测", "kalmanPredictEnabled", state.kalmanPredictEnabled, "启用后保留 trackId，并在短暂丢框时继续预测")}
+                    ${state.kalmanPredictEnabled ? sliderRow({ label: "丢失容忍帧", key: "kalmanMaxMissed", value: state.kalmanMaxMissed, min: 0, max: 30, step: 1, type: "int", format: "frame" }) : ""}
+                    ${state.kalmanPredictEnabled ? sliderRow({ label: "过程噪声", key: "kalmanProcessNoise", value: state.kalmanProcessNoise, min: 0, max: 500, step: 1, type: "float", format: "int" }) : ""}
+                    ${state.kalmanPredictEnabled ? sliderRow({ label: "测量噪声", key: "kalmanMeasureNoise", value: state.kalmanMeasureNoise, min: 1, max: 500, step: 1, type: "float", format: "int" }) : ""}
+                    ${state.kalmanPredictEnabled ? sliderRow({ label: "框平滑", key: "kalmanBoxSmooth", value: state.kalmanBoxSmooth, min: 0, max: 1, step: 0.01, type: "float", format: "float2" }) : ""}
+                    ${state.kalmanPredictEnabled ? sliderRow({ label: "匹配 IoU", key: "kalmanMatchIouThreshold", value: state.kalmanMatchIouThreshold, min: 0, max: 1, step: 0.01, type: "float", format: "float2" }) : ""}
+                </div>
+            `;
+        }
+
+        function renderSystemTab() {
+            return `
+                <div class="section">
+                    ${switchRow("显示截取范围", "showCaptureRange", state.showCaptureRange)}
+                    ${sliderRow({ label: "截取范围", key: "range", value: state.range, min: 50, max: 800, step: 1, type: "int", format: "px" })}
+                    ${switchRow("显示检测框", "showDetectionBox", state.showDetectionBox)}
+                    ${switchRow("显示中心点", "showCenterDot", state.showCenterDot)}
+                    ${switchRow("录屏", "recordEnabled", state.recordEnabled, "H265 编码，60 帧，保存到 Pictures/Screenshots")}
+                    ${switchRow("自动保存数据集", "autoSaveDataset", state.autoSaveDataset, "检测到目标时自动截图+YOLO标注，保存到应用外部存储")}
+                </div>
+                <div class="section">
+                    <button class="action-row" type="button" onclick="runAction('testCircle')">
+                        <div class="setting-main">
+                            <div class="setting-title">输入测试</div>
+                            <div class="setting-desc">在屏幕中心画一个圆</div>
+                        </div>
+                        <div class="action-arrow">›</div>
+                    </button>
+                    <button class="action-row" type="button" onclick="runAction('openAreaSettings')">
+                        <div class="setting-main">
+                            <div class="setting-title">区域设置</div>
+                            <div class="setting-desc">配置开火 / 触发 / 瞄准 / 开镜区域</div>
+                        </div>
+                        <div class="action-arrow">›</div>
+                    </button>
+                </div>
+                ${segmentedRow("充电口朝向", "touchOrientationMode", state.touchOrientationMode, [
+                    { label: "自动", value: 0 },
+                    { label: "右侧", value: 1 },
+                    { label: "左侧", value: 2 }
+                ])}
+            `;
+        }
+
+        function renderContent() {
+            const root = document.getElementById("content");
+            if (!root) return;
+            let html = "";
+            switch (state.activeTab) {
+                case 0:
+                    html = renderAimTab();
+                    break;
+                case 1:
+                    html = renderTriggerTab();
+                    break;
+                case 2:
+                    html = renderModelTab();
+                    break;
+                case 3:
+                default:
+                    html = renderSystemTab();
+                    break;
+            }
+            root.innerHTML = html;
+        }
+
+        function renderState(nextState) {
+            state = Object.assign({}, state, nextState || {});
+            if (typeof state.activeTab !== "number" || state.activeTab < 0 || state.activeTab > 3) {
+                state.activeTab = 0;
+            }
+            renderHeader();
+            renderTabs();
+            renderContent();
+        }
+
+        window.renderState = renderState;
+    </script>
+</body>
+</html>
