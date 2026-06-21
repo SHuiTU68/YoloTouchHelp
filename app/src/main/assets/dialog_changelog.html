@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>更新日志</title>
+    <style>
+        :root {
+            --primary: #5b67f0;
+            --primary-soft: #eef0ff;
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --line: #e5e7eb;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0;
+            background: transparent;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text-main);
+        }
+        body { padding: 16px; }
+        .dialog {
+            background: var(--bg);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+        }
+        .header {
+            padding: 20px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .close-btn {
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: #fff;
+            color: var(--text-sub);
+            font-size: 20px;
+        }
+        .content {
+            padding: 0 20px 20px;
+            max-height: 78vh;
+            overflow-y: auto;
+        }
+        .intro {
+            margin: 0 0 14px;
+            color: var(--text-sub);
+            font-size: 13px;
+        }
+        .item {
+            background: var(--card);
+            border: 1px solid rgba(229, 231, 235, 0.7);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            margin-bottom: 14px;
+        }
+        .version {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .date {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+        .lines {
+            margin: 12px 0 0;
+            padding-left: 18px;
+            line-height: 1.75;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+        .footer {
+            padding: 0 20px 20px;
+        }
+        .primary-btn {
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            padding: 15px 16px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            box-shadow: 0 14px 28px rgba(91, 103, 240, 0.25);
+        }
+    </style>
+</head>
+<body>
+<div class="dialog">
+    <div class="header">
+        <div class="title">更新日志</div>
+        <button class="close-btn" type="button" onclick="closeDialog()">×</button>
+    </div>
+    <div class="content">
+        <p class="intro">以下内容延续当前项目已有的更新记录。</p>
+        <div class="item"><div class="version">v1.0.1</div><div class="date">2026-06-21</div><ul class="lines"><li>修复优化多处 bug</li><li>支持联发科 / 天玑 调用 NPU</li><li>优化悬浮窗，可缩放拖动</li><li>优化 PID 控制算法与自瞄算法</li><li>完善触摸协议 B</li></ul></div>
+        <div class="item"><div class="version">v1.0.0</div><div class="date">2026-06-20</div><ul class="lines"><li>AI 目标检测，支持骁龙 QNN 硬件加速 非晓龙CPU推理</li><li>自瞄模式，智能追踪目标</li><li>扳机模式，精准触发射击</li><li>多精度模型可选</li></ul></div>
+    </div>
+    <div class="footer">
+        <button class="primary-btn" type="button" onclick="closeDialog()">关闭</button>
+    </div>
+</div>
+<script>
+    function closeDialog() {
+        if (window.DialogHost && typeof window.DialogHost.close === "function") {
+            window.DialogHost.close();
+        }
+    }
+</script>
+</body>
+</html>

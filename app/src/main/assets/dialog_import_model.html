@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>导入模型</title>
+    <style>
+        :root {
+            --primary: #5b67f0;
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --line: #e5e7eb;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0;
+            background: transparent;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text-main);
+        }
+        body { padding: 16px; }
+        .dialog {
+            background: var(--bg);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+        }
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title { font-size: 22px; font-weight: 700; }
+        .close-btn {
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: #fff;
+            color: var(--text-sub);
+            font-size: 20px;
+        }
+        .content {
+            padding: 0 20px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .notice {
+            background: #eef0ff;
+            border-radius: 18px;
+            padding: 14px;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .field {
+            background: var(--card);
+            border: 1px solid rgba(229, 231, 235, 0.7);
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+        }
+        .label {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .hint {
+            margin-top: 8px;
+            color: var(--text-sub);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .footer {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            flex: 1;
+            border: none;
+            border-radius: 18px;
+            height: 46px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .btn-secondary { background: #fff; color: var(--text-sub); }
+        .btn-primary { background: var(--primary); color: #fff; }
+    </style>
+</head>
+<body>
+<div class="dialog">
+    <div class="header">
+        <div class="title">导入模型</div>
+        <button class="close-btn" type="button" onclick="closeDialog()">×</button>
+    </div>
+    <div class="content">
+        <div class="notice">当前仅支持导入 .tflite 模型。类别格式示例：0:head,1:body。</div>
+        <div class="field" onclick="focusInput('modelName')">
+            <div class="label">模型名称</div>
+            <input id="modelName" type="text" placeholder="模型名称">
+        </div>
+        <div class="field" onclick="focusInput('inputSize')">
+            <div class="label">输入尺寸</div>
+            <input id="inputSize" type="number" inputmode="numeric" placeholder="例如 256">
+        </div>
+        <div class="field" onclick="focusInput('classes')">
+            <div class="label">类别</div>
+            <input id="classes" type="text" placeholder="0:head,1:body">
+            <div class="hint">格式：类别ID:名称，多个用英文逗号分隔，例如 0:body,1:head</div>
+        </div>
+    </div>
+    <div class="footer">
+        <button class="btn btn-secondary" type="button" onclick="closeDialog()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="submitImport()">导入</button>
+    </div>
+</div>
+<script>
+    function focusInput(id) {
+        const input = document.getElementById(id);
+        if (input) {
+            input.focus();
+            input.click();
+            if (window.ImportModelHost && typeof window.ImportModelHost.showKeyboard === "function") {
+                window.ImportModelHost.showKeyboard();
+            }
+        }
+    }
+
+    function closeDialog() {
+        if (window.ImportModelHost && typeof window.ImportModelHost.close === "function") {
+            window.ImportModelHost.close();
+        }
+    }
+
+    function submitImport() {
+        if (window.ImportModelHost && typeof window.ImportModelHost.submit === "function") {
+            window.ImportModelHost.submit(
+                document.getElementById("modelName").value,
+                document.getElementById("inputSize").value,
+                document.getElementById("classes").value
+            );
+        }
+    }
+
+    window.ImportModelDialog = {
+        render(raw) {
+            const data = JSON.parse(raw);
+            document.getElementById("modelName").value = data.displayName || "";
+            document.getElementById("inputSize").value = data.inputSize || "256";
+            document.getElementById("classes").value = data.classes || "0:head";
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.ImportModelHost && typeof window.ImportModelHost.onPageReady === "function") {
+            window.ImportModelHost.onPageReady();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+# Trae 修改记录
+
+## 当前任务
+- 主页 UI 按用户提供的 HTML 视觉重构。
+- 由于用户已自行重构项目，旧的 `Trae.md` 已删除，本文件重新建立。
+- 本轮继续把主页从代码拼装改成 XML 资源化，并精修菜单、按钮、模型卡细节。
+
+## 本轮计划
+- 重做 `MainActivity.kt` 首页布局，使其尽量贴近新设计稿。
+- 保留现有功能入口：启动/停止、模型选择、模型信息、主菜单、权限状态展示。
+- 修改完成后进行诊断和构建验证。
+
+## 当前状态
+- 已完成：重新建立 `Trae.md`，用于承接用户当前重构后的项目状态。
+- 已完成：主页从 `MainActivity.kt` 手工创建视图切回 `app/src/main/res/layout/activity_main.xml`，`MainActivity.kt` 现在主要负责绑定和交互逻辑，减少了大量手搓 UI 代码。
+- 已完成：主页视觉继续精修，整体贴近用户提供的 HTML：
+  - 浅灰背景 + 白色圆角主卡片
+  - 大标题 + 右上角菜单按钮
+  - 靛蓝浅色状态卡片
+  - 更精细的模型下拉框、模型信息卡圆角和间距
+  - 右下角渐变启动/停止按钮
+- 已完成：主菜单 `popup_menu.xml` 改成更接近 HTML 的白色圆角下拉卡片，补了描边、分隔线和更统一的条目高度。
+- 已保留原有首页交互逻辑：启动/停止、模型选择同步、主菜单、权限状态展示。
+- 已完成：补充本机 `local.properties` 指向 Android SDK，解决之前无法构建的问题。
+- 已完成：修复触摸方向只区分“横屏/竖屏”导致仅适配单侧横屏的问题。现在 `FloatService -> AIDL -> Shizuku/Root -> RemoteInjectorService -> JNI -> touch_core` 整条链路都改为传递真实 `rotation` 整数，而不是 `boolean landscapeStart`。
+- 已完成：`touch_core.cpp` 改为支持 `Surface.ROTATION_0/90/180/270` 四向坐标换算，`screenToTouch()`、物理手指区域检测和摇杆手指释放逻辑都同步按真实旋转处理，补上“手机横屏充电口在左边”的路径。
+- 已完成：对照 `YoloTouchHelper/src/Android_touch/TouchHelperA.cpp` 再次修正横屏分支，确认此前把 `ROTATION_90` 和 `ROTATION_270` 两个横屏映射写反了；现已交换回来，避免出现“左横屏正常、右横屏失效”的问题。
+- 已完成：按最新排查结论回退 `FloatService.currentDisplayRotation()` 里的横屏编号互换映射，改为直接透传系统 `rotation/orientation` 到触摸链路，避免在 Java 层再次把左右横屏编号改乱。
+- 已完成：在悬浮窗菜单 `GuiPanelView.kt` 的“系统”页增加“充电口朝向”切换，提供 `自动 / 右侧 / 左侧` 三档，避免只能依赖系统 rotation 自动判断。
+- 已完成：`ConfigManager.kt` 新增 `touchOrientationMode` 持久化字段，用户切换后会写入配置并在下次启动时恢复。
+- 已完成：`FloatService.kt` 增加手动方向覆盖逻辑；`currentDisplayRotation()` 现在会根据 `touchOrientationMode` 生成最终传给触摸注入层的 rotation，菜单切换后会立即重发到 `touchClient.setOrientationConfig(...)`，无需重启服务。
+- 已完成：按用户反馈缩小主页右上角弹出菜单尺寸，`popup_menu.xml` 的最小宽度、条目高度、图标尺寸、文字字号和内边距都整体下调一档，避免菜单卡片显得过大。
+- 已完成：修复“自瞄压枪没有效果”。根因是当前 APK 的 `AimController.kt` 根本没有接入 `recoilEnabled/recoilStrength`，且 `FloatService.kt` 也没有把压枪配置同步到控制器，导致菜单调压枪实际不参与任何位移计算。
+- 已完成：`AimController.kt` 新增压枪参数和实际位移修正逻辑；当前按项目现有语义改为“按住开火键时生效”，通过 `touchClient?.isFingerInFireZone()` 检测物理手指是否在开火区，并在 PID/Bezier 两种移动模式里都追加向下压枪位移。
+- 已完成：压枪力度沿用当前 APK 的 0.0~1.0 配置范围，但在控制器内部映射为可见的屏幕位移，避免之前即便配置有值也几乎看不出效果。
+- 已完成：参考 `YoloTouchHelper/src/Android_yolo/YoloRuntime.cpp` 把可执行版的 `Kalman 预测 + IoU/中心距离贪心匹配` 移植到 APK，新增 `KalmanObjectTracker.kt`，常量与 helper 保持一致：`maxMissed=5`、`processNoise=70`、`measureNoise=110`、`boxSmooth=0.60`、`matchIoUThreshold=0.20`、匹配分数=`IoU*0.75 + distance*0.25`。
+- 已完成：`DetectionInfo.kt` 扩展为携带 `score / trackId / missedFrames`，`AimController.kt` 同步升级为优先锁定 `trackId`，丢失后才回退到旧的最近框锁定，避免卡尔曼追踪接上后自瞄仍然只按中心点模糊锁框。
+- 已完成：`FloatService.kt` 的推理循环改为 `raw detections -> Kalman tracker -> overlay/aim/trigger` 统一链路；在没有原始检测框但轨迹仍可预测时，检测框、自瞄和扳机仍可继续使用短暂续跟结果。
+- 已完成：菜单 `GuiPanelView.kt` 的“模型”页新增 `卡尔曼预测` 开关，配置项新增 `kalmanPredictEnabled` 并写入 `ConfigManager.kt` 持久化。
+- 已完成：`assembleDebug` 构建通过。
+- 已完成：按用户最新要求收窄“自瞄未触发时”的清理行为，`FloatService.kt` 与 `InferenceManager.kt` 的 `clearAimSession(...)` 现在只执行三件事：清空检测目标显示、重置卡尔曼/追踪状态（主链路）、抬起瞄准指并重置瞄准控制器；不再额外调用 `triggerUp()` 或重置扳机触摸状态。
+- 已完成：继续修正“压枪无效果”链路。对照可执行版后发现 APK 把压枪触发条件写成了仅检测 `isFingerInFireZone()`，而 helper 版本实际是跟随“按住激活/触发区”生效；现已调整为 `AimController.kt` 同时兼容 `触发区` 与 `开火区` 两种物理手指检测，避免按住激活区自瞄时压枪始终为 0。
+- 已完成：`GuiPanelView.kt` 的压枪说明文案同步改为“按住触发区或开火区时持续下压”，避免菜单提示与实际逻辑不一致。
+- 已完成：按用户最新要求再次收紧压枪触发条件，`AimController.kt` 现在仅在 `aimHoldEnabled` 打开且物理手指位于 `触发区` 时才施加压枪，不再兼容 `开火区`。
+- 已完成：`GuiPanelView.kt` 的压枪提示文案同步改为“仅在按住触发区时持续下压”。
+- 已完成：区域设置新增第 5 个“开镜区”，`AreaSettingsView.kt` 默认区域列表和初始布局已调整为适配 5 个区域，旧配置会在 `FloatService.kt` 启动时自动补齐缺失的开镜区。
+- 已完成：触摸检测链路新增 `开镜区` 支持，`TouchInjectorInterface` / `IRemoteInjector.aidl` / `ShizukuInjectorClient.java` / `RootInjectorClient.kt` / `RemoteInjectorService.java` / `uinput_inject.cpp` / `touch_core.cpp` / `root_daemon.cpp` 均已补充 `setAdsZone` 与 `isFingerInAdsZone`。
+- 已完成：`FloatService.kt` 与 `InferenceManager.kt` 的按住激发条件改为“触发区或开镜区任一按下即可触发自瞄”，菜单说明也同步更新为包含开镜区。
+- 已完成：修复“开启按住激发区域后检测框一闪一闪”。根因不是开镜区检测本身，而是 `FloatService.kt` / `InferenceManager.kt` 在 `hold_inactive` 分支中复用了 `clearAimSession(...)` 并清空了检测框和追踪，导致每帧先显示检测框再立刻清空。现已改为：`hold_inactive` 时仅抬起瞄准指并重置瞄准状态，不再清空可视检测结果。
+- 已完成：按用户要求参照可执行版重做区域判定逻辑，`touch_core.cpp` 不再依赖 `zone.finger_inside` 缓存标志位，而是改为在 `isFingerInTriggerZone/isFingerInAdsZone/isFingerInFireZone/isFingerInJoystickZone` 查询时实时遍历当前物理手指、执行 `touchToScreen(...)` 坐标换算后再判断是否命中区域，判定链更接近 helper 版 `GetDevices() -> Touch2Screen() -> 区域命中` 的方式。
+- 已完成：继续收紧“非激活状态”的清框行为。`FloatService.kt` / `InferenceManager.kt` 现在在 `hold_inactive` 与 `aimbot_off` 两种原因下都只抬起瞄准指并重置瞄准状态，不再清空检测框；同时菜单手动关闭自瞄时的 `aimbot_disabled` 也改为不清检测框，避免出现“按住未激活不清，但直接关自瞄却清空”的不一致表现。
+- 已完成：修复“按住激发区域只有四条边能触发、边框里面反而不触发”的坐标逆变换问题。根因是 `touch_core.cpp` 里实时区域判定把物理手指从触摸坐标换回屏幕坐标时，没有与 `screenToTouch(...)` 保持严格对称；现已改为基于 `g_touchScale` 的逆变换，再按当前 `rotation` 还原到真实屏幕坐标，避免手指落点被投到区域边缘附近造成误判。
+- 已完成：修正“压枪压太过”。根因是 APK 版 `AimController.kt` 把 `recoilStrength` 当成 `0..1` 百分比值后又额外乘了 `80`，导致如 `0.5` 会变成每帧 `40px` 级别的过强补偿；现已改为和可执行版一致，`recoilStrength` 直接作为最终压枪补偿值使用，并把 `GuiPanelView.kt` / `ConfigManager.kt` / `FloatService.kt` 的压枪强度量纲统一到 `0..80`。
+- 已完成：将固定写死在 `KalmanObjectTracker.kt` 内的卡尔曼参数开放到菜单和配置。当前已新增并持久化 5 个可调项：`kalmanMaxMissed`、`kalmanProcessNoise`、`kalmanMeasureNoise`、`kalmanBoxSmooth`、`kalmanMatchIouThreshold`；`GuiPanelView.kt` 在“模型”页的“卡尔曼预测”开关下动态显示这些滑条，`FloatService.kt` 负责把参数下发到 `kalmanTracker` 并在参数变更时 `reset()`，保证新参数立即生效且不混用旧轨迹状态。
+- 已完成：按 `YoloRuntime.cpp` / `AutoAimController.cpp` 将可执行版这批自瞄与扳机参数整套移植到 APK，而不是只加菜单名。`AimController.kt` 现已新增并实际使用 `targetLostTolerance`、`showLockRay`、`lockBoxThreshold`、`lockCenterWeight`、`moveSmooth`、`deadzoneHoldFrames`、`edgeReturnStrength`，实现锁框评分、丢帧续锁、死区保持抬手、边界回中与锁定射线；`TriggerController.kt` 现已新增 `autoTriggerAdsEnabled`、`autoTriggerAdsRange`，支持吸附式扳机；`GuiPanelView.kt` / `ConfigManager.kt` / `FloatService.kt` / `InferenceManager.kt` / `OverlayCanvasView.kt` 已同步接入菜单、配置持久化、主链路与旧链路显示，`assembleDebug` 构建通过。
+- 已完成：调整“锁定瞄准线”显示时机。此前 `FloatService.kt` / `InferenceManager.kt` 只在真正执行 `executeAiming(...)` 的分支里更新锁定线，导致关自瞄或未按住激发区域时锁定线被清掉；现已改为只要当前存在可锁定目标，就独立更新锁定线显示，自瞄是否实际执行不再影响锁定线绘制，只有当前确实没有可锁定目标时才清空锁定线。
+- 已完成：排查并修正 `Shizuku` 模式自瞄“触摸不移动/链路异常”的关键初始化问题。根因更偏向注入链路而非算法：`FloatService.kt` / `InferenceManager.kt` 原先多处先下发 `orientation` 再下发 `resolution`，而 `RemoteInjectorService.java` 的 native 坐标映射会在 `setOrientationConfig()` 时立刻使用当前缓存的屏幕尺寸，顺序错误会导致 `Shizuku` 下整条触摸坐标系失配；现已统一改成先下发分辨率再下发旋转，并在 `RemoteInjectorService.java#setResolution()` 内增加一次基于当前 rotation 的 native 参数同步兜底。同时把 `ShizukuInjectorClient.java` 的 `startGeteventListener()/stopGeteventListener()` 从反射改为直接走 AIDL 调用，避免 user service 代理调用异常。
+- 已完成：新增“自瞄预判”实际生效链路。`FloatService.kt` / `ConfigManager.kt` 原本已经保留了 `aimPrediction` 参数和回调，但 `AimController.kt` 没有真正使用它，导致菜单参数形同虚设；现已参照可执行版 `AutoAimController.cpp` 接入“目标速度平滑 + 提前量偏移”逻辑：锁定目标连续帧时用 `0.65/0.35` 平滑更新预测速度，再按 `aimPrediction * 0.35` 将瞄点沿目标移动方向提前，同时限制在目标框附近避免预判过冲。`GuiPanelView.kt` 的自瞄页也已补上 `自瞄预判(0~10)` 滑条和说明文案，构建通过。
+- 已完成：将“自瞄预判”进一步改为直接联动 `Kalman` 跟踪速度，而不是只靠 `AimController.kt` 自己根据连续帧位置差估算。现已在 `DetectionInfo.kt` 增加 `velocityX/velocityY` 字段，`KalmanObjectTracker.kt` 在输出追踪结果时同步带出基于卡尔曼状态速度换算后的逐帧速度；`AimController.kt` 现在优先使用 `Kalman` 输出速度做预判，只有未开启卡尔曼或当前目标没有有效跟踪速度时，才回退到本地连续帧平滑估算。构建通过。
+- 已完成：按用户要求保留现有 `自瞄预判(0~10)` 滑条不变，仅把预判整体提前量放大一档。`AimController.kt` 中 `applyPrediction()` 的系数已从 `0.35` 提升到 `0.7`，使同样的菜单数值拥有更明显的预判体感，同时不改动滑条范围、菜单结构和其它自瞄参数。构建通过。
+- 已完成：修正 `Shizuku` 模式下激活区域与实际手指位置不准的问题。排查后发现 `FloatService.kt` 在触摸注入器刚连接时，优先向 `Shizuku/Root` 触摸链下发的是 `captureW/captureH`，而激活区、开镜区等矩形区域实际都是按真实屏幕坐标系绘制；若连接时 capture 尺寸尚未和当前屏幕完全一致，native 区域判定就会从一开始使用错误坐标系。现已改为连接时直接使用 `screenWidth/screenHeight` 下发触摸分辨率，确保区域判定从初始化阶段就和屏幕坐标一致。构建通过。
+- 已完成：继续排查 `Shizuku` 模式下“root 已修复但 Shizuku 仍像旧问题”的差异，新增了 `ShizukuInjectorClient.java` 的 user-service 版本控制。根因之一是 `root` 每次都会重新拉起新的 `root_daemon`，而 `Shizuku` 的 `RemoteInjectorService` 版本一直写死为 `1`，可能持续复用旧的 user service 进程和旧版 native `.so`，导致此前修复过的 `touch_core.cpp` 区域判定逻辑没有真正更新到 Shizuku 进程。现已将 user-service 版本提升到 `2` 并在 `unbindUserService` 时也同步使用同一版本，强制下次绑定时加载新的 service 进程与新的 native 触摸链。构建通过。
+- 已完成：按用户最新要求改为“使用 HTML 作为主界面风格，但不删原有功能”。当前首页宿主 `activity_main.xml` 已简化为单一 `WebView` 容器，新增本地资源 `app/src/main/assets/main_ui.html` 作为主页/设置页界面，实现参考用户提供的 HTML 风格重绘，而不是直接照抄静态网页。
+- 已完成：`MainActivity.kt` 已从旧的 XML 控件绑定改为 `WebView + JavascriptInterface` 结构，保留并桥接了原本存在的核心功能：启动/停止悬浮窗、模型切换、权限说明、导出配置、导入配置、更新日志、GitHub、进入原生 `SettingsActivity`。
+- 已完成：首页中原“瞄准参数”位置已改为“设备信息”，展示真实 `Android 版本` 与 `设备型号`；原“目标设置”位置已改为“项目介绍”，内容按用户要求固定为“本项目是个公益开源项目 会持续长久更新”。
+- 已完成：HTML 设置页已按项目实际功能删减，不再保留参考稿里那些项目内并不存在的开关项；当前仅保留真实可用入口：导出配置、导入配置、权限说明、高级设置、GitHub、更新日志。
+- 已完成：虽然主页视觉改成 HTML 风格，但原先主页具备的“模型信息”能力没有删除，仍在 HTML 首页中保留当前模型名称、量化方式、输入尺寸、输出数量、描述、类别展示，并通过原生弹窗继续执行模型切换逻辑。
+- 已完成：按用户新要求，`更新日志` 与 `首次免责声明` 也统一改为 HTML 风格弹窗。新增 `app/src/main/assets/dialog_changelog.html` 与 `app/src/main/assets/dialog_disclaimer.html`，`MainActivity.kt` 通过弹窗内 `WebView + JavascriptInterface` 加载本地 HTML，而不是继续使用原先的 `dialog_changelog.xml` / `dialog_disclaimer.xml` 作为实际显示界面。
+- 已完成：免责声明 HTML 弹窗保留原有交互约束，不是纯静态页。当前仍要求用户先滚动到底部，再等待 `30s` 倒计时结束后才可点击“同意”；点击“退出”仍会直接关闭 App，点击“同意”仍会写入已接受状态并继续初始化首页。
+- 已完成：更新日志 HTML 弹窗保留原项目已有版本记录内容，仅将展示样式改成与主页统一的圆角卡片、浅色背景、底部按钮风格。
+- 已完成：修复 HTML 主界面迁移后“设置页高级设置 / GitHub 点击即崩溃”的问题。根因是 `MainActivity.kt` 中 `WebAppBridge.openSettings()` 与 `WebAppBridge.openGithub()` 和外层同名方法发生遮蔽，桥接调用时在 inner class 内递归调用自己，导致直接栈溢出闪退；现已改为显式调用 `this@MainActivity.openSettings()` / `this@MainActivity.openGithub()`，同时 `GitHub` 打开链路增加了 `resolveActivity` 与异常兜底，避免没有浏览器时再次崩溃。
+- 已完成：继续把 `权限说明` 与 `模型选择` 两个原生弹层统一改成 HTML 风格弹窗，新增 `app/src/main/assets/dialog_permission.html` 与 `app/src/main/assets/dialog_model_picker.html`，并通过 `PermissionDialogBridge` / `ModelPickerDialogBridge` 动态渲染当前权限状态与模型列表，保留原本授权跳转和模型切换逻辑。
+- 已完成：按用户最新反馈继续精简主页，删除了首页中的“选择模型”“权限说明”“设备信息”三块展示，避免页面过长；相关功能没有删掉，模型切换仍可从模型信息卡进入，权限说明仍可从设置页和帮助入口进入。
+- 已完成：按用户最新要求调整主页右上角按钮语义。首页第一个问号按钮不再打开权限说明，而是打开新增的 `app/src/main/assets/dialog_device_info.html` 设备信息弹窗，展示 Android 版本、设备型号与应用版本；第二个按钮改为退出图标，点击后会停止前台悬浮服务、清理覆盖层并执行 `finishAffinity()/finishAndRemoveTask()` 退出程序。
+- 已完成：按用户反馈继续统一高级设置页配色。`SettingsActivity.kt` 现已从旧的 MD3 紫色方案切换到与 HTML 首页一致的蓝紫主色、浅灰背景、白色圆角卡片和浅描边风格，视觉与当前主页更统一。
+- 已完成：修复“更新日志弹窗打开后内容看不见/无法展开”。根因是 `MainActivity.kt` 中 HTML 弹窗宿主 `WebView` 高度使用了 `wrap_content`，长页面在对话框里没有拿到有效可视高度；现已把 HTML 弹窗宿主改为按屏幕比例分配固定高度，并按不同弹窗类型设置不同 `heightRatio`，让更新日志、免责声明等内容在弹窗内部正常滚动显示。
+- 已完成：设置页“GitHub”前补了 GitHub 图标，位于 `app/src/main/assets/main_ui.html` 的“关于”分组中。
+- 已完成：调整 GitHub 链接打开方式。此前因为 `resolveActivity()` 预判返回空，被错误提示成“未找到打开链接的应用”；现在改为直接构造带 `CATEGORY_BROWSABLE` 的 `ACTION_VIEW` HTTPS Intent，并通过系统浏览器选择器打开，优先交给浏览器处理，只有真正没有可处理应用时才提示失败。
+- 已完成：修复主页右上角退出按钮图标显示异常。根因是之前使用了字符型电源符号 `⏻`，在部分 Android WebView / 系统字体下会缺字或显示错误；现已改为 `main_ui.html` 内联 SVG 电源图标，不再依赖系统字体。
+- 已完成：按用户要求将应用版本号定义回调为 `1.0.0`，位置在 `app/build.gradle.kts` 的 `defaultConfig.versionName`。主页状态栏、设备信息弹窗等基于包信息读取的版本显示会随之统一变为 `1.0.0`。
+- 已完成：按用户最新要求，将游戏内悬浮菜单从原先的原生 `GuiPanelView` 动态控件拼装，重构为 `WebView + 本地 HTML` 宿主。当前 `app/src/main/java/team/maodie/aimbot/view/GuiPanelView.kt` 已改成 HTML 悬浮菜单桥接层，新增资源 `app/src/main/assets/float_menu.html` 作为实际渲染界面。
+- 已完成：新的悬浮菜单 HTML 布局按用户参考稿改成顶部操作栏 + 横向页签 + 卡片式内容区的风格，支持直接在网页里切换页签、切换模型运行状态、关闭悬浮菜单，并继续桥接原本存在的自瞄 / 扳机 / 模型 / 系统参数，不是纯静态展示页。
+- 已完成：按用户要求移除了悬浮菜单中的“防闪”页签，同时也去掉了项目当前菜单里原本对应的空白“防闪”占位内容；新的悬浮菜单仅保留真实存在且有内容的四个页签：`自瞄`、`扳机`、`模型`、`系统`。
+- 已完成：新的 HTML 悬浮菜单继续保留原本核心控制能力，包括但不限于：自瞄开关、按住激发、压枪、PID/贝塞尔参数、目标类别、优先瞄准、扳机参数、吸附式扳机、模型切换、置信度、Kalman 参数、显示开关、区域设置、输入测试、录屏、自动保存数据集、充电口朝向等，并通过 `JavascriptInterface` 回调到原生逻辑层执行。
+- 已完成：按用户最新要求统一检测框绘制配色。`OverlayCanvasView.kt` 中检测框、锁定射线、中心点、截取范围角标已从原先的高饱和红绿蓝杂色改为与当前 HTML 主页一致的蓝紫系配色，并为检测框增加轻微同色半透明填充，视觉更统一。
+- 已完成：按用户要求简化检测标签绘制。当前标签不再使用原先较大的深色矩形底和阴影文字，而是改为更小的圆角胶囊标签，仅保留必要类别名称文字，减少遮挡与信息噪声。
+- 已完成：按用户提供的素材 `C:\Users\54477\Downloads\logo.webp` 替换应用图标资源。当前已直接覆盖 `app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}` 下的 `ic_launcher.webp` 与 `ic_launcher_round.webp`，保持 `AndroidManifest.xml` 中原有 `@mipmap/ic_launcher` / `@mipmap/ic_launcher_round` 引用不变。
+- 已完成：按用户后续提供的同目录新素材 `C:\Users\54477\Downloads\1.webp` 再次覆盖应用图标资源，当前实际打包进 APK 的图标已更新为 `1.webp` 对应内容。
+- 已完成：按用户要求将项目应用名称改为 `YoloTouchHelp`。当前 `app/src/main/res/values/strings.xml` 的 `app_name` 已更新，首页 HTML 标题、悬浮菜单 HTML 标题、免责声明中的项目名称、前台通知标题与录屏文件名前缀等用户可见文案也已同步从 `Aimbot` 调整为 `YoloTouchHelp`。
+- 已完成：按用户要求将包名改为 `com.yolotouchhelp.aimbot`。当前 `app/build.gradle.kts` 中的 `namespace` 与 `applicationId` 已同步更新；源码目录、AIDL 目录、单元测试目录已迁移到 `com/yolotouchhelp/aimbot` 路径；Kotlin/Java/AIDL/HTML/XML/CPP 中原先的 `team.maodie.aimbot` 相关引用也已统一替换。
+- 已完成：同步修正包名迁移涉及的 native 与运行时绑定项。`aimbot.cpp` / `uinput_inject.cpp` 中 JNI 导出函数名前缀已切换到 `Java_com_yolotouchhelp_aimbot_*`，`qnn_engine.cpp` 中的 QNN 缓存目录也已从 `/data/data/team.maodie.aimbot/cache/qnn` 更新为 `/data/data/com.yolotouchhelp.aimbot/cache/qnn`，避免包名改完后 JNI 和缓存路径失效。
+- 已完成：按用户要求继续收口项目内部命名到 `YoloTouchHelp`。当前主题资源已从 `Theme.Aimbot` / `Base.Theme.Aimbot` 改为 `Theme.YoloTouchHelp` / `Base.Theme.YoloTouchHelp`，`AndroidManifest.xml` 与 `GuiPanelView.kt` 的主题引用已同步更新。
+- 已完成：按用户要求将主页 WebView 桥接标识从 `AimbotApp` / `AimbotUi` 改为 `YoloTouchHelpApp` / `YoloTouchHelpUi`，并同步更新 `main_ui.html` 与 `MainActivity.kt` 中的 JS 调用脚本，避免品牌名仍停留在旧命名。
+- 已完成：按用户要求将 `MainActivity.kt` 内部首页状态枚举从 `AimbotState` 改为 `YoloTouchHelpState`，相关状态变量与状态同步方法也已一并重命名；同时将 `Aimbot_AI` / `AimbotInfer` 日志 tag 收口为 `YoloTouchHelp_AI` / `YoloTouchHelpInfer`。
+- 已完成：按用户要求删除项目中的 Git 存储库相关文件。当前已确认并准备移除 `d:\auto aim\Auto-aim_android-yolo\.git`、`d:\auto aim\Auto-aim_android-yolo\app\.gitignore` 与 `d:\auto aim\Auto-aim_android-yolo\.idea\.gitignore`，删除后项目代码仍保留，但不再带当前 Git 仓库元数据与忽略规则文件。
+- 已完成：按用户要求在设置页“关于”分组中新增“友情致谢”入口，并放置在“更新日志”后面。当前 `main_ui.html` 已新增对应菜单项，点击后通过 `MainActivity.kt` 新增的 `openAcknowledgements()` 桥接打开 `dialog_acknowledgements.html`。
+- 已完成：按用户提供内容新增 HTML 弹窗 `dialog_acknowledgements.html`，统一采用当前主页/更新日志的蓝紫配色风格，排版为卡片式致谢列表，包含 `speed-arch`、`xiangsu1145`、`Aliang1337` 及 `GPT / Claude` 的致谢说明，并为 GitHub 与中转站链接提供可点击跳转能力。
+- 已完成：按用户要求编译 `release` 版本安装包，执行 `./gradlew assembleRelease` 成功，当前产物为 `app/build/outputs/apk/release/app-release.apk`。
+- 已完成：按用户要求清理 `debug` 安装包，当前已删除 `app/build/outputs/apk/debug/app-debug.apk`，保留 `release` 安装包用于安装分发。
+- 已完成：按用户要求在设置页“关于”分组中于 `GitHub` 后新增 `QQ群` 入口，显示群号 `977186929`，前方使用 QQ 风格图标。当前 `main_ui.html` 已新增对应菜单项与群号副标题。
+- 已完成：按用户要求实现“点击自动加 QQ 群”。当前 `MainActivity.kt` 已新增 `openQqGroup()`，使用 `mqqapi://card/show_pslcard?...&uin=977186929&card_type=group` 直接拉起 QQ 群资料页进行加群；若设备未安装 QQ，则给出提示而不崩溃。
+- 已完成：由于上一步 QQ 群入口改动最初只做了 `debug` 构建验证，为避免用户安装旧 `release` 包看不到新入口，已重新执行 `./gradlew assembleRelease` 更新 `release` 安装包，并再次清理 `app/build/outputs/apk/debug/app-debug.apk`，确保当前分发包与源码界面一致。
+- 已完成：修复“激活区域设置图层未占满整个屏幕”的问题。当前 `FloatService.kt` 中 `AreaSettingsView` 的悬浮窗参数已补充 `FLAG_LAYOUT_NO_LIMITS`，并显式设置 `gravity = TOP|START` 与 `layoutInDisplayCutoutMode = SHORT_EDGES`，让区域设置层可覆盖系统栏/刘海区域；同样修正了 `OverlayManager.kt` 的备用实现，避免后续路径出现同类问题。
+- 已完成：按用户要求重写 `README.md`。当前 README 已改为 `YoloTouchHelp` 项目介绍页，顶部使用 `Image/apk-icon.webp` 作为 APK 图标展示，并使用 `Image` 目录中的图片作为项目展示图；同时新增功能特性、运行要求、构建方式、主要结构、使用说明与友情致谢章节。
+- 已完成：为便于 README 展示，已将当前应用图标复制为 `Image/apk-icon.webp`，并将 `Image` 目录中的 6 张项目图片复制为 `preview-1.jpg` 至 `preview-6.jpg` 供 README 引用，避免直接在文档中暴露随机文件名。
+- 已完成：按用户要求重新编译 `release` 安装包并清理 `debug` 包。当前 `./gradlew assembleRelease` 已成功执行，产物为 `app/build/outputs/apk/release/app-release.apk`；同时已删除 `app/build/outputs/apk/debug/app-debug.apk`。
+- 已完成：修正 `README.md` 中项目展示图的顺序错误。当前“首页 / 设置”两张展示图已对调，`首页` 现在引用 `Image/preview-2.jpg`，`设置` 现在引用 `Image/preview-1.jpg`，与实际界面截图对应一致。
+- 已完成：修正 `README.md` 顶部头图区域在部分 Markdown 预览器中被当作代码原样显示的问题。当前已将顶部的 HTML 块改为纯 Markdown 写法，直接使用 `![YoloTouchHelp Icon](Image/apk-icon.webp)`、一级标题和普通段落描述，避免预览器对 `<div>/<img>/<h1>` 兼容性不一致导致显示异常。
+- 已完成：按用户要求在 `README.md` 顶部简介后补充项目来源与致谢说明。当前已新增说明文字，明确本项目基于 `https://github.com/xiangsu1145/Auto-aim_android-yolo` 持续修改与扩展，并特别感谢 `https://github.com/xiangsu1145` 提供的项目基础与支持。
+- 已完成：按用户要求继续完善 `README.md`，新增“相较原项目的主要扩展”与“本次重点修复”两节。当前 README 已概述本项目在原工程基础上新增的 `Kalman` 预测与续跟、`IoU + 中心距离` 贪心匹配、自瞄预判联动、开镜区、HTML 化界面与更多菜单调参项，并总结了区域判定、检测框闪烁、压枪链路、Shizuku 初始化、区域设置层全屏覆盖、HTML 弹窗跳转等方面的修复。
+- 已完成：按用户要求将 `README.md` 中上述扩展说明重新整理为“三小节”结构。当前已统一改写为 `新增特性 / 修复内容 / UI 重构` 三节，保留原先算法扩展、问题修复与界面改造的核心信息，但整体更适合 README 首页阅读。
+- 已完成：按用户要求将当前项目上传到 GitHub 仓库 `https://github.com/DreamFekk/YoloTouchHelp.git`。当前本地仓库已重新初始化并完成首次提交，远端 `main` 分支已按用户确认执行强制覆盖推送。
+- 已完成：按用户要求创建 GitHub Release。当前已使用标签 `v1.0.0` 创建 Release，并将 `app/build/outputs/apk/release/app-release.apk` 上传为 Release 附件，发布页地址为 `https://github.com/DreamFekk/YoloTouchHelp/releases/tag/v1.0.0`。
+- 已完成：按用户要求给 `NL无畏` 项目的自动扳机接入自动急停。当前 `Aimbot.h` 已在自动扳机开火前调用 `slot1` 执行驱动触摸急停，`slot0` 继续保留给自动扳机开火；`Config.h` 已新增自动急停开关、急停 X/Y 偏移、半径和时长并支持保存加载；`Menu.h` 已新增对应菜单项；`Game.h` 已在显示扳机区域时同步绘制“自动急停区域”。
+
+## 本轮未改
+- 主页、更新日志、免责声明、权限说明、模型选择已经切到 `WebView + 本地 HTML`，但整体仍然保持“原生逻辑 + HTML 视图”的混合架构，尚未把主菜单等剩余弹层完全统一改成 HTML。
+- 菜单和主页已接近参考稿风格，但仍未逐像素复刻 HTML 的全部阴影、动画和排版细节。
+- 触摸方向目前增加了手动覆盖开关，但尚未增加更细的调试显示（例如当前 raw rotation / effective rotation 的菜单可视化状态）。
+- 当前卡尔曼追踪已接入 `FloatService` 主链路；`InferenceManager.kt` 仍保留旧检测流实现，后续若重新启用该管理器，需要把同一套 tracker 逻辑同步过去，避免两条推理路径行为不一致。

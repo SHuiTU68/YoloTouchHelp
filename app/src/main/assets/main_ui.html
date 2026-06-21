@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>YoloTouchHelp</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --primary: #5b67f0;
+            --primary-soft: #eef0ff;
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --line: #e5e7eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: #f1f5f9;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text-main);
+        }
+
+        body {
+            padding: 16px;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--bg);
+            border-radius: 28px;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            min-height: calc(100vh - 32px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 20px 12px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-sub);
+            font-size: 16px;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
+        .content {
+            flex: 1;
+            padding: 0 20px 92px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 22px;
+            padding: 18px;
+            border: 1px solid rgba(229, 231, 235, 0.7);
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+        }
+
+        .status-card {
+            background: var(--primary-soft);
+            border-color: rgba(91, 103, 240, 0.12);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0 0 14px;
+        }
+
+        .status-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .status-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .status-meta {
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.84);
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .grid-item {
+            background: rgba(255, 255, 255, 0.68);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .grid-label,
+        .field-label {
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+
+        .grid-value,
+        .field-value {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .outline-btn,
+        .menu-row,
+        .primary-btn,
+        .ghost-btn {
+            border: none;
+            width: 100%;
+            border-radius: 16px;
+            font-size: 14px;
+        }
+
+        .outline-btn,
+        .ghost-btn {
+            background: #f8fafc;
+            color: var(--text-main);
+            padding: 13px 14px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: #fff;
+            padding: 15px 16px;
+            font-weight: 700;
+            box-shadow: 0 14px 28px rgba(91, 103, 240, 0.28);
+        }
+
+        .menu-section-title {
+            margin: 0 0 10px;
+            padding: 0 4px;
+            color: var(--primary);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .menu-list {
+            background: var(--card);
+            border-radius: 22px;
+            border: 1px solid rgba(229, 231, 235, 0.7);
+            overflow: hidden;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+        }
+
+        .menu-row {
+            background: transparent;
+            color: var(--text-main);
+            padding: 16px 18px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .menu-row:last-child {
+            border-bottom: none;
+        }
+
+        .menu-sub {
+            display: block;
+            margin-top: 4px;
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .arrow {
+            color: #94a3b8;
+            font-size: 18px;
+            margin-left: 10px;
+        }
+
+        .menu-leading {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            color: var(--text-main);
+        }
+
+        .bottom-nav {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.96);
+            border-top: 1px solid #eef2f7;
+            padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-sub);
+            padding: 8px 0 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.72);
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .dot.running {
+            background: var(--success);
+        }
+
+        .model-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .model-name {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .field-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .field-row .field-value {
+            margin-top: 0;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .intro {
+            line-height: 1.7;
+            color: var(--text-sub);
+            font-size: 14px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <header class="header">
+        <div class="header-title" id="pageTitle">YoloTouchHelp</div>
+        <div class="header-actions">
+            <button class="icon-btn" type="button" onclick="invokeNative('openDeviceInfo')" aria-label="设备信息">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="7" y="2.5" width="10" height="19" rx="2.5"/>
+                    <path d="M10.5 5.5h3"/>
+                    <circle cx="12" cy="18.2" r="0.8" fill="currentColor" stroke="none"/>
+                </svg>
+            </button>
+            <button class="icon-btn" type="button" onclick="invokeNative('exitApp')" aria-label="退出程序">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12 3v9"/>
+                    <path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <section id="homePage" class="page active">
+            <div class="stack">
+                <div class="card status-card">
+                    <div class="status-top">
+                        <div>
+                            <div id="statusText" class="status-text">待机中</div>
+                            <div id="statusMeta" class="status-meta">版本 -- · 权限未就绪</div>
+                            <div class="status-pill">
+                                <span id="statusDot" class="dot"></span>
+                                <span id="touchValue">等待触摸服务</span>
+                            </div>
+                        </div>
+                        <div id="backendBadge" class="badge">---</div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="grid-item">
+                            <div class="grid-label">权限模式</div>
+                            <div id="privilegeValue" class="grid-value">-</div>
+                        </div>
+                        <div class="grid-item">
+                            <div class="grid-label">悬浮权限</div>
+                            <div id="overlayValue" class="grid-value">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="model-summary">
+                        <div>
+                            <div class="field-label">当前模型</div>
+                            <div id="modelName" class="model-name">暂无模型</div>
+                        </div>
+                        <button class="ghost-btn" type="button" style="width:auto;padding:10px 14px;" onclick="invokeNative('showModelPicker')">切换</button>
+                    </div>
+
+                    <div class="field-list">
+                        <div class="field-row">
+                            <div class="field-label">量化方式</div>
+                            <div id="modelPrecision" class="field-value">-</div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-label">输入尺寸</div>
+                            <div id="modelInput" class="field-value">-</div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-label">输出数量</div>
+                            <div id="modelOutput" class="field-value">-</div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-label">描述</div>
+                            <div id="modelDescription" class="field-value">-</div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-label">类别</div>
+                            <div id="modelClasses" class="field-value">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="toggleButton" class="primary-btn" type="button" onclick="invokeNative('toggleAimbot')">启动悬浮窗</button>
+            </div>
+        </section>
+
+        <section id="settingsPage" class="page">
+            <div class="stack">
+                <div>
+                    <h3 class="menu-section-title">配置</h3>
+                    <div class="menu-list">
+                        <button class="menu-row" type="button" onclick="invokeNative('exportConfig')">
+                            <span>导出配置</span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('importConfig')">
+                            <span>导入配置</span>
+                            <span class="arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="menu-section-title">系统</h3>
+                    <div class="menu-list">
+                        <button class="menu-row" type="button" onclick="invokeNative('openPermissionHelp')">
+                            <span>权限说明</span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('openSettings')">
+                            <span>
+                                高级设置
+                                <span class="menu-sub">CPU 推理设置</span>
+                            </span>
+                            <span class="arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="menu-section-title">关于</h3>
+                    <div class="menu-list">
+                        <button class="menu-row" type="button" onclick="invokeNative('checkUpdate')">
+                            <span>
+                                检查更新
+                                <span class="menu-sub" id="appVersionText">当前版本</span>
+                            </span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('openGithub')">
+                            <span class="menu-leading">
+                                <span class="menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 0.2a8 8 0 0 0-2.53 15.6c0.4 0.08 0.55-0.17 0.55-0.39v-1.38c-2.23 0.49-2.7-0.95-2.7-0.95c-0.36-0.92-0.88-1.16-0.88-1.16c-0.72-0.49 0.06-0.48 0.06-0.48c0.8 0.06 1.22 0.82 1.22 0.82c0.71 1.21 1.87 0.86 2.32 0.66c0.07-0.52 0.28-0.86 0.5-1.06c-1.78-0.2-3.64-0.89-3.64-3.97c0-0.88 0.31-1.59 0.82-2.15c-0.08-0.2-0.36-1.01 0.08-2.1c0 0 0.67-0.21 2.2 0.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-0.82 2.2-0.82c0.44 1.09 0.16 1.9 0.08 2.1c0.51 0.56 0.82 1.27 0.82 2.15c0 3.09-1.87 3.77-3.66 3.97c0.29 0.25 0.54 0.74 0.54 1.49v2.21c0 0.22 0.14 0.48 0.55 0.39A8 8 0 0 0 8 0.2Z"/>
+                                    </svg>
+                                </span>
+                                <span>GitHub</span>
+                            </span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('openTelegram')">
+                            <span class="menu-leading">
+                                <span class="menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="1.25" y="1.25" width="13.5" height="13.5" rx="4" fill="#229ED9"/>
+                                        <path d="M12.55 4.05L10.95 11.6c-0.12 0.53-0.43 0.66-0.88 0.41L7.64 10.22L6.47 11.35c-0.13 0.13-0.24 0.24-0.49 0.24L6.15 9.1L10.69 5c0.2-0.18-0.04-0.28-0.31-0.1L4.77 8.43L2.35 7.67c-0.52-0.16-0.53-0.52 0.11-0.77L11.93 3.25c0.44-0.16 0.82 0.1 0.62 0.8Z" fill="white"/>
+                                    </svg>
+                                </span>
+                                <span>
+                                    Telegram
+                                    <span class="menu-sub">加入频道/群组</span>
+                                </span>
+                            </span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('openChangelog')">
+                            <span>更新日志</span>
+                            <span class="arrow">›</span>
+                        </button>
+                        <button class="menu-row" type="button" onclick="invokeNative('openAcknowledgements')">
+                            <span>
+                                友情致谢
+                                <span class="menu-sub">感谢框架、模型与中转站支持</span>
+                            </span>
+                            <span class="arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button id="tabHome" class="nav-btn active" type="button" onclick="switchTab('home')">主页</button>
+        <button id="tabSettings" class="nav-btn" type="button" onclick="switchTab('settings')">设置</button>
+    </nav>
+</div>
+
+<script>
+    const uiState = {
+        tab: "home"
+    };
+
+    function invokeNative(method) {
+        if (window.YoloTouchHelpApp && typeof window.YoloTouchHelpApp[method] === "function") {
+            window.YoloTouchHelpApp[method]();
+        }
+    }
+
+    function setText(id, value) {
+        const node = document.getElementById(id);
+        if (node) {
+            node.textContent = value == null || value === "" ? "-" : String(value);
+        }
+    }
+
+    function switchTab(tab) {
+        uiState.tab = tab;
+        const homeActive = tab === "home";
+        document.getElementById("homePage").classList.toggle("active", homeActive);
+        document.getElementById("settingsPage").classList.toggle("active", !homeActive);
+        document.getElementById("tabHome").classList.toggle("active", homeActive);
+        document.getElementById("tabSettings").classList.toggle("active", !homeActive);
+        setText("pageTitle", homeActive ? "YoloTouchHelp" : "设置");
+    }
+
+    window.YoloTouchHelpUi = {
+        render(raw) {
+            const data = JSON.parse(raw);
+            setText("statusText", data.statusText);
+            setText("statusMeta", "版本 " + data.versionName + " · " + data.privilegeValue);
+            setText("appVersionText", "当前版本 " + data.versionName);
+            setText("backendBadge", data.backend);
+            setText("privilegeValue", data.privilegeValue);
+            setText("overlayValue", data.overlayValue);
+            setText("touchValue", data.touchValue);
+            setText("androidVersion", data.androidVersion);
+            setText("deviceName", data.deviceName);
+            setText("projectIntro", data.projectIntro);
+
+            const model = data.model || {};
+            setText("modelName", model.displayName || "暂无模型");
+            setText("modelPrecision", model.precision || "-");
+            setText("modelInput", model.inputSize ? model.inputSize + "x" + model.inputSize : "-");
+            setText("modelOutput", model.outputSize || "-");
+            setText("modelDescription", model.description || "-");
+            setText("modelClasses", model.classesSummary || "-");
+
+            const toggleButton = document.getElementById("toggleButton");
+            toggleButton.textContent = data.running ? "停止" : "启动";
+
+            const dot = document.getElementById("statusDot");
+            dot.classList.toggle("running", !!data.running);
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.YoloTouchHelpApp && typeof window.YoloTouchHelpApp.onPageReady === "function") {
+            window.YoloTouchHelpApp.onPageReady();
+        }
+    });
+</script>
+</body>
+</html>

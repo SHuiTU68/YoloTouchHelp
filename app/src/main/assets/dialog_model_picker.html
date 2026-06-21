@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>选择模型</title>
+    <style>
+        :root {
+            --primary: #5b67f0;
+            --primary-soft: #eef0ff;
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --line: #e5e7eb;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0;
+            background: transparent;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text-main);
+        }
+        body { padding: 16px; }
+        .dialog {
+            background: var(--bg);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+        }
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .import-btn {
+            border: none;
+            height: 36px;
+            border-radius: 18px;
+            padding: 0 14px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .close-btn {
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: #fff;
+            color: var(--text-sub);
+            font-size: 20px;
+        }
+        .content {
+            padding: 0 20px 20px;
+            max-height: 72vh;
+            overflow-y: auto;
+        }
+        .intro {
+            margin: 0 0 14px;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .item-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+        .item {
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(229, 231, 235, 0.7);
+            background: var(--card);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+        }
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 15px;
+            background: #fff1f2;
+            color: #e11d48;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 30px;
+            box-shadow: 0 6px 14px rgba(225, 29, 72, 0.12);
+        }
+        .item.active {
+            border-color: rgba(91, 103, 240, 0.32);
+            background: var(--primary-soft);
+        }
+        .name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .meta {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f8fafc;
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+        .desc {
+            margin-top: 10px;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+<div class="dialog">
+    <div class="header">
+        <div class="title">选择模型</div>
+        <div class="header-actions">
+            <button class="import-btn" type="button" onclick="importModel()">导入模型</button>
+            <button class="close-btn" type="button" onclick="closeDialog()">×</button>
+        </div>
+    </div>
+    <div class="content">
+        <p class="intro">模型切换。</p>
+        <div id="modelList"></div>
+    </div>
+</div>
+<script>
+    function closeDialog() {
+        if (window.ModelPickerHost && typeof window.ModelPickerHost.close === "function") {
+            window.ModelPickerHost.close();
+        }
+    }
+
+    function selectModel(index) {
+        if (window.ModelPickerHost && typeof window.ModelPickerHost.selectModel === "function") {
+            window.ModelPickerHost.selectModel(index);
+        }
+    }
+
+    function importModel() {
+        if (window.ModelPickerHost && typeof window.ModelPickerHost.importModel === "function") {
+            window.ModelPickerHost.importModel();
+        }
+    }
+
+    function deleteModel(index) {
+        if (window.ModelPickerHost && typeof window.ModelPickerHost.deleteModel === "function") {
+            window.ModelPickerHost.deleteModel(index);
+        }
+    }
+
+    window.ModelPickerDialog = {
+        render(raw) {
+            const data = JSON.parse(raw);
+            const root = document.getElementById("modelList");
+            root.innerHTML = "";
+            (data.models || []).forEach(function (model) {
+                const wrap = document.createElement("div");
+                wrap.className = "item-wrap";
+
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "item" + (model.index === data.selectedIndex ? " active" : "");
+                item.onclick = function () { selectModel(model.index); };
+
+                const name = document.createElement("div");
+                name.className = "name";
+                name.textContent = model.displayName;
+                item.appendChild(name);
+
+                const meta = document.createElement("div");
+                meta.className = "meta";
+                const precision = document.createElement("span");
+                precision.className = "pill";
+                precision.textContent = model.precision;
+                const inputSize = document.createElement("span");
+                inputSize.className = "pill";
+                inputSize.textContent = model.inputSize + "x" + model.inputSize;
+                meta.appendChild(precision);
+                meta.appendChild(inputSize);
+                item.appendChild(meta);
+
+                const desc = document.createElement("div");
+                desc.className = "desc";
+                desc.textContent = model.description || "-";
+                item.appendChild(desc);
+                wrap.appendChild(item);
+
+                if (model.imported) {
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.type = "button";
+                    deleteBtn.className = "delete-btn";
+                    deleteBtn.textContent = "×";
+                    deleteBtn.onclick = function (event) {
+                        event.stopPropagation();
+                        deleteModel(model.index);
+                    };
+                    wrap.appendChild(deleteBtn);
+                }
+                root.appendChild(wrap);
+            });
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.ModelPickerHost && typeof window.ModelPickerHost.onPageReady === "function") {
+            window.ModelPickerHost.onPageReady();
+        }
+    });
+</script>
+</body>
+</html>
